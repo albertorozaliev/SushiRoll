@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SushiRoll</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: #ffffff;
+            background: #111111;
+        }
+
+        header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+            width: 100%;
+            padding: 28px 40px 0;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0 0 28px;
+            color: #e3252e;
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: 0;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 70px;
+        }
+
+        nav a {
+            color: #ffffff;
+            font-size: 22px;
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+
+        nav a:hover {
+            color: #e3252e;
+        }
+
+        .header-icon {
+            position: absolute;
+            top: 24px;
+            left: 36px;
+            width: 72px;
+            height: 72px;
+            object-fit: contain;
+        }
+
+        main {
+            min-height: 100vh;
+        }
+
+        footer {
+            padding: 18px;
+            color: #dddddd;
+            text-align: center;
+            background: #111111;
+        }
+
+        footer p {
+            margin: 0;
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <header>
+        <h1>SushiRoll</h1>
+        <nav>
+            <a href="{% url 'information' %}">О нас</a>
+            <a href="{% url 'products' %}">Меню</a>
+            <a href="{% url 'cart' %}">Корзина</a>
+            <a href="{% url 'data_index' %}">Данные</a>
+        </nav>
+        <img class="header-icon" src="{% static 'images/HeroPage/icon.png' %}" alt="SushiRoll">
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>2026 SushiRoll. Ресторан японской кухни.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,186 @@
+{% extends 'restaurant/base.html' %}
+
+{% block extra_css %}
+    .cart-page {
+        min-height: 100vh;
+        padding: 150px 44px 80px;
+        color: #ffffff;
+        background: #1b1b1b;
+    }
+
+    .cart-inner {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    .cart-title {
+        margin: 0 0 34px;
+        font-size: 44px;
+        text-transform: uppercase;
+    }
+
+    .cart-list {
+        display: grid;
+        gap: 18px;
+    }
+
+    .cart-item {
+        display: grid;
+        grid-template-columns: 120px 1fr auto;
+        gap: 24px;
+        align-items: center;
+        padding: 22px;
+        background: #111111;
+    }
+
+    .cart-item img {
+        width: 120px;
+        height: 100px;
+        object-fit: contain;
+        background: #191919;
+    }
+
+    .cart-item h3 {
+        margin: 0 0 10px;
+        font-size: 24px;
+    }
+
+    .cart-item p {
+        margin: 0;
+        color: #cfcfcf;
+        font-size: 17px;
+        line-height: 1.5;
+    }
+
+    .cart-price {
+        color: #ffffff;
+        font-size: 22px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .cart-total {
+        margin-top: 30px;
+        display: flex;
+        justify-content: flex-end;
+        color: #ffffff;
+        font-size: 28px;
+        font-weight: 700;
+    }
+
+    .cart-empty {
+        padding: 44px;
+        color: #d0d0d0;
+        background: #111111;
+        font-size: 22px;
+        line-height: 1.6;
+    }
+
+    .cart-actions {
+        margin-top: 28px;
+        display: flex;
+        gap: 16px;
+        justify-content: flex-end;
+    }
+
+    .cart-link,
+    .cart-clear {
+        padding: 16px 28px;
+        border-radius: 30px;
+        font-size: 18px;
+        font-weight: 700;
+        text-decoration: none;
+        text-transform: uppercase;
+    }
+
+    .cart-link {
+        color: #ffffff;
+        background: #e3252e;
+    }
+
+    .cart-clear {
+        color: #ffffff;
+        background: transparent;
+        border: 1px solid #777777;
+        cursor: pointer;
+    }
+
+    @media (max-width: 760px) {
+        .cart-page {
+            padding: 140px 20px 60px;
+        }
+
+        .cart-item {
+            grid-template-columns: 1fr;
+        }
+
+        .cart-actions,
+        .cart-total {
+            justify-content: flex-start;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+    <section class="cart-page">
+        <div class="cart-inner">
+            <h2 class="cart-title">Корзина</h2>
+
+            <div id="cart-list" class="cart-list"></div>
+            <div id="cart-total" class="cart-total"></div>
+
+            <div class="cart-actions">
+                <a class="cart-link" href="{% url 'products' %}">Вернуться в меню</a>
+                <button class="cart-clear" type="button" id="clear-cart">Очистить</button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const cartList = document.querySelector('#cart-list');
+        const cartTotal = document.querySelector('#cart-total');
+        const clearCartButton = document.querySelector('#clear-cart');
+
+        function renderCart() {
+            const cart = JSON.parse(localStorage.getItem('sushiroll_cart') || '[]');
+
+            if (cart.length === 0) {
+                cartList.innerHTML = '<div class="cart-empty">Ваша корзина пока пуста.<br>Добавьте товары из меню, чтобы оформить заказ.</div>';
+                cartTotal.textContent = '';
+                return;
+            }
+
+            let total = 0;
+
+            cartList.innerHTML = cart.map(function (item) {
+                const price = Number(item.price) || 0;
+                const quantity = Number(item.quantity) || 1;
+                total += price * quantity;
+
+                const image = item.image
+                    ? '<img src="' + item.image + '" alt="' + item.name + '">'
+                    : '<img alt="Нет фото">';
+
+                return '<div class="cart-item">'
+                    + image
+                    + '<div>'
+                    + '<h3>' + item.name + '</h3>'
+                    + '<p>Количество: ' + quantity + '</p>'
+                    + '<p>Вес: ' + item.weight + '</p>'
+                    + '<p>Состав: ' + item.composition + '</p>'
+                    + '</div>'
+                    + '<div class="cart-price">' + (price * quantity).toFixed(2) + ' руб.</div>'
+                    + '</div>';
+            }).join('');
+
+            cartTotal.textContent = 'Итого: ' + total.toFixed(2) + ' руб.';
+        }
+
+        clearCartButton.addEventListener('click', function () {
+            localStorage.removeItem('sushiroll_cart');
+            renderCart();
+        });
+
+        renderCart();
+    </script>
+{% endblock %}

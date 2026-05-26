@@ -1,0 +1,162 @@
+{% extends 'restaurant/base.html' %}
+
+{% block extra_css %}
+    .data-page {
+        min-height: 100vh;
+        padding: 150px 44px 80px;
+        color: #ffffff;
+        background: #1b1b1b;
+    }
+
+    .data-inner {
+        max-width: 1180px;
+        margin: 0 auto;
+    }
+
+    .data-title {
+        margin: 0 0 28px;
+        font-size: 42px;
+        text-transform: uppercase;
+    }
+
+    .data-list {
+        display: grid;
+        gap: 16px;
+    }
+
+    .data-row {
+        display: grid;
+        grid-template-columns: 120px 1fr auto;
+        gap: 22px;
+        align-items: center;
+        padding: 20px;
+        color: #ffffff;
+        background: #111111;
+        text-decoration: none;
+    }
+
+    .data-row:hover {
+        background: #171717;
+    }
+
+    .data-thumb {
+        width: 120px;
+        height: 96px;
+        object-fit: contain;
+        background: #191919;
+    }
+
+    .data-empty-thumb {
+        width: 120px;
+        height: 96px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #777777;
+        background: #191919;
+        font-size: 14px;
+    }
+
+    .data-row h3 {
+        margin: 0 0 8px;
+        font-size: 24px;
+    }
+
+    .data-row p {
+        margin: 0;
+        color: #cfcfcf;
+        font-size: 17px;
+        line-height: 1.5;
+    }
+
+    .data-more {
+        color: #e3252e;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .data-empty {
+        padding: 34px;
+        color: #d0d0d0;
+        background: #111111;
+        font-size: 22px;
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-top: 28px;
+        color: #cfcfcf;
+        font-size: 18px;
+        text-decoration: none;
+    }
+
+    @media (max-width: 760px) {
+        .data-page {
+            padding: 140px 20px 60px;
+        }
+
+        .data-row {
+            grid-template-columns: 1fr;
+        }
+    }
+{% endblock %}
+
+{% block content %}
+    <section class="data-page">
+        <div class="data-inner">
+            <h2 class="data-title">{{ page_title }}</h2>
+
+            {% if objects %}
+                <div class="data-list">
+                    {% for object in objects %}
+                        <a class="data-row" href="{% url detail_url_name object.pk %}">
+                            {% if model_name == 'user' and object.profile.photo %}
+                                <img class="data-thumb" src="{{ object.profile.photo.url }}" alt="{{ object.username }}">
+                            {% elif model_name == 'menuitem' and object.image %}
+                                <img class="data-thumb" src="{{ object.image.url }}" alt="{{ object.name }}">
+                            {% elif model_name == 'review' and object.image %}
+                                <img class="data-thumb" src="{{ object.image.url }}" alt="Фото отзыва">
+                            {% else %}
+                                <div class="data-empty-thumb">Нет фото</div>
+                            {% endif %}
+
+                            <div>
+                                {% if model_name == 'user' %}
+                                    <h3>{{ object.username }}</h3>
+                                    <p>{{ object.email|default:"Email не указан" }}</p>
+                                {% elif model_name == 'category' %}
+                                    <h3>{{ object.name }}</h3>
+                                    <p>{{ object.description|default:"Описание не указано" }}</p>
+                                {% elif model_name == 'menuitem' %}
+                                    <h3>{{ object.name }}</h3>
+                                    <p>{{ object.category.name }} · {{ object.price }} руб.</p>
+                                {% elif model_name == 'order' %}
+                                    <h3>Заказ №{{ object.id }}</h3>
+                                    <p>Статус: {{ object.get_status_display }} · Пользователь: {{ object.user|default:"не указан" }}</p>
+                                {% elif model_name == 'orderitem' %}
+                                    <h3>{{ object.menu_item.name }}</h3>
+                                    <p>Заказ №{{ object.order.id }} · Количество: {{ object.quantity }}</p>
+                                {% elif model_name == 'payment' %}
+                                    <h3>Оплата заказа №{{ object.order.id }}</h3>
+                                    <p>{{ object.amount }} руб. · {{ object.get_method_display }}</p>
+                                {% elif model_name == 'favorite' %}
+                                    <h3>{{ object.menu_item.name }}</h3>
+                                    <p>Пользователь: {{ object.user }} · Добавлено: {{ object.created_at }}</p>
+                                {% elif model_name == 'review' %}
+                                    <h3>Отзыв о {{ object.menu_item.name }}</h3>
+                                    <p>Оценка: {{ object.rating }} · Пользователь: {{ object.user|default:"не указан" }}</p>
+                                {% endif %}
+                            </div>
+
+                            <span class="data-more">Подробнее</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="data-empty">Данных пока нет.</div>
+            {% endif %}
+
+            <a class="back-link" href="{% url 'data_index' %}">Вернуться к списку таблиц</a>
+        </div>
+    </section>
+{% endblock %}
