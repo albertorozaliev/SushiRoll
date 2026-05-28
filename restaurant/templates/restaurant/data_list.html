@@ -19,6 +19,26 @@
         text-transform: uppercase;
     }
 
+    .data-toolbar {
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+    }
+
+    .data-action {
+        display: inline-block;
+        padding: 13px 22px;
+        color: #ffffff;
+        background: #e3252e;
+        border-radius: 28px;
+        font-size: 16px;
+        font-weight: 700;
+        text-decoration: none;
+        text-transform: uppercase;
+    }
+
     .data-list {
         display: grid;
         gap: 16px;
@@ -32,7 +52,6 @@
         padding: 20px;
         color: #ffffff;
         background: #111111;
-        text-decoration: none;
     }
 
     .data-row:hover {
@@ -75,6 +94,24 @@
         white-space: nowrap;
     }
 
+    .row-actions {
+        display: flex;
+        gap: 14px;
+        justify-content: flex-end;
+        align-items: center;
+    }
+
+    .row-action {
+        color: #cfcfcf;
+        font-size: 15px;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .row-action:hover {
+        color: #ffffff;
+    }
+
     .data-empty {
         padding: 34px;
         color: #d0d0d0;
@@ -106,10 +143,17 @@
         <div class="data-inner">
             <h2 class="data-title">{{ page_title }}</h2>
 
+            <div class="data-toolbar">
+                <a class="back-link" href="{% url 'data_index' %}">Вернуться к списку таблиц</a>
+                {% if create_url_name %}
+                    <a class="data-action" href="{% url create_url_name %}">Добавить</a>
+                {% endif %}
+            </div>
+
             {% if objects %}
                 <div class="data-list">
                     {% for object in objects %}
-                        <a class="data-row" href="{% url detail_url_name object.pk %}">
+                        <div class="data-row">
                             {% if model_name == 'user' and object.profile.photo %}
                                 <img class="data-thumb" src="{{ object.profile.photo.url }}" alt="{{ object.username }}">
                             {% elif model_name == 'menuitem' and object.image %}
@@ -148,15 +192,21 @@
                                 {% endif %}
                             </div>
 
-                            <span class="data-more">Подробнее</span>
-                        </a>
+                            <span class="row-actions">
+                                <a class="data-more" href="{% url detail_url_name object.pk %}">Подробнее</a>
+                                {% if update_url_name %}
+                                    <a class="row-action" href="{% url update_url_name object.pk %}">Изменить</a>
+                                {% endif %}
+                                {% if delete_url_name %}
+                                    <a class="row-action" href="{% url delete_url_name object.pk %}">Удалить</a>
+                                {% endif %}
+                            </span>
+                        </div>
                     {% endfor %}
                 </div>
             {% else %}
                 <div class="data-empty">Данных пока нет.</div>
             {% endif %}
-
-            <a class="back-link" href="{% url 'data_index' %}">Вернуться к списку таблиц</a>
         </div>
     </section>
 {% endblock %}

@@ -52,6 +52,30 @@
         text-decoration: none;
     }
 
+    .detail-actions {
+        margin-top: 28px;
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .detail-action {
+        display: inline-block;
+        padding: 14px 22px;
+        color: #ffffff;
+        background: #e3252e;
+        border-radius: 28px;
+        font-size: 16px;
+        font-weight: 700;
+        text-decoration: none;
+        text-transform: uppercase;
+    }
+
+    .detail-action.secondary {
+        background: transparent;
+        border: 1px solid #777777;
+    }
+
     @media (max-width: 760px) {
         .data-page {
             padding: 140px 20px 60px;
@@ -125,6 +149,15 @@
                     <li><strong>Опубликован:</strong> {{ object.is_published|yesno:"да,нет" }}</li>
                 {% endif %}
             </ul>
+
+            <div class="detail-actions">
+                {% if update_url_name %}
+                    <a class="detail-action" href="{% url update_url_name object.pk %}">Изменить</a>
+                {% endif %}
+                {% if delete_url_name %}
+                    <a class="detail-action secondary" href="{% url delete_url_name object.pk %}">Удалить</a>
+                {% endif %}
+            </div>
 
             <a class="back-link" href="{% url list_url_name %}">Вернуться к списку</a>
         </div>

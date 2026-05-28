@@ -52,12 +52,25 @@ class MenuItemAdmin(admin.ModelAdmin):
     fields = ('category', 'name', 'slug', 'composition', 'image', 'price', 'weight_grams', 'is_available')
 
 
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'photo', 'created_at')
+    search_fields = ('user__username', 'user__email')
+
+
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'delivery_city', 'delivery_street', 'status', 'created_at')
     list_filter = ('status', 'created_at')
     search_fields = ('user__username', 'user__email', 'delivery_street', 'delivery_building')
     inlines = [OrderItemInline]
+
+
+@admin.register(OrderItem)
+class OrderItemAdmin(admin.ModelAdmin):
+    list_display = ('order', 'menu_item', 'quantity', 'unit_price')
+    list_filter = ('menu_item',)
+    search_fields = ('order__id', 'menu_item__name')
 
 
 @admin.register(Payment)
