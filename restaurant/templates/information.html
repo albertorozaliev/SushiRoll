@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    <section class="hero">
+        <div class="hero-content">
+            <p class="hero-text">Вдохновлено Японией. Создано с мастерством.</p>
+            <a class="order-button" href="{% url 'products' %}">Заказать</a>
+        </div>
+    </section>
+
+    <section class="about-section">
+        <div class="about-inner">
+            <div class="about-text">
+                <h2>О нас</h2>
+                <div class="about-line"></div>
+                <p class="about-lead">SushiRoll - ресторан японской кухни, где свежие продукты встречаются с аккуратной подачей и вниманием к деталям.</p>
+                <p>Мы готовим роллы, суши и сеты каждый день, чтобы вы могли наслаждаться вкусом Японии дома, в офисе или за столиком нашего ресторана.</p>
+            </div>
+
+            <img class="about-image" src="{% static 'images/HeroPage/sushi_oneone.jpg' %}" alt="Интерьер SushiRoll">
+        </div>
+    </section>
+
+    <section class="team-section">
+        <div class="team-inner">
+            <img class="team-image" src="{% static 'images/HeroPage/woman.jpg' %}" alt="Повар SushiRoll">
+
+            <div class="team-text">
+                <p class="team-label">Наша команда</p>
+                <h2>Мастерство поваров</h2>
+                <div class="team-line"></div>
+                <p class="team-lead">Каждое блюдо готовится людьми, которые знают японскую кухню и любят свою работу.</p>
+                <p>Мы внимательно выбираем продукты, соблюдаем технологию приготовления и заботимся о том, чтобы заказ выглядел красиво и оставался вкусным до последнего кусочка.</p>
+            </div>
+        </div>
+    </section>
+{% endblock %}

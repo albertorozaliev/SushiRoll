@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <section class="product-page">
+        <div class="product-detail">
+            <div class="product-image-wrap">
+                {% if menu_item.image %}
+                    <img class="product-image" src="{{ menu_item.image.url }}" alt="{{ menu_item.name }}">
+                {% else %}
+                    <p>Нет фото</p>
+                {% endif %}
+            </div>
+
+            <div class="product-info">
+                <h2>{{ menu_item.name }}</h2>
+                <p class="product-price">{{ menu_item.price }} руб.</p>
+
+                <ul class="product-list">
+                    <li><strong>Категория:</strong> {{ menu_item.category.name }}</li>
+                    <li><strong>Вес:</strong> {% if menu_item.weight_grams %}{{ menu_item.weight_grams }} г{% else %}не указан{% endif %}</li>
+                    <li>
+                        <strong>Состав:</strong>
+                        {% if menu_item.composition %}
+                            {{ menu_item.composition }}
+                        {% else %}
+                            состав пока не указан
+                        {% endif %}
+                    </li>
+                </ul>
+
+                <button class="add-cart-button" type="button" id="add-to-cart">Добавить в корзину</button>
+                <br>
+                <a class="back-link" href="{% url 'products' %}">Вернуться в меню</a>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const addButton = document.querySelector('#add-to-cart');
+
+        addButton.addEventListener('click', function () {
+            const product = {
+                id: '{{ menu_item.id }}',
+                name: '{{ menu_item.name|escapejs }}',
+                price: Number('{{ menu_item.price }}'.replace(',', '.')),
+                image: '{% if menu_item.image %}{{ menu_item.image.url }}{% endif %}',
+                weight: '{% if menu_item.weight_grams %}{{ menu_item.weight_grams }} г{% else %}не указан{% endif %}',
+                composition: '{{ menu_item.composition|default:"состав пока не указан"|escapejs }}',
+                quantity: 1
+            };
+
+            const cart = JSON.parse(localStorage.getItem('sushiroll_cart') || '[]');
+            const existingProduct = cart.find(function (item) {
+                return item.id === product.id;
+            });
+
+            if (existingProduct) {
+                existingProduct.quantity += 1;
+            } else {
+                cart.push(product);
+            }
+
+            localStorage.setItem('sushiroll_cart', JSON.stringify(cart));
+            window.location.href = '{% url "cart" %}';
+        });
+    </script>
+{% endblock %}

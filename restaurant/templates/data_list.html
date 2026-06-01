@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <section class="data-page">
+        <div class="data-inner wide">
+            <h2 class="data-title">{{ page_title }}</h2>
+
+            <div class="data-toolbar">
+                <a class="back-link" href="{% url 'data_index' %}">Вернуться к списку таблиц</a>
+                {% if create_url_name %}
+                    <a class="data-action" href="{% url create_url_name %}">Добавить</a>
+                {% endif %}
+            </div>
+
+            {% if objects %}
+                <div class="data-list">
+                    {% for object in objects %}
+                        <div class="data-row">
+                            {% if model_name == 'user' and object.profile.photo %}
+                                <img class="data-thumb" src="{{ object.profile.photo.url }}" alt="{{ object.username }}">
+                            {% elif model_name == 'menuitem' and object.image %}
+                                <img class="data-thumb" src="{{ object.image.url }}" alt="{{ object.name }}">
+                            {% elif model_name == 'review' and object.image %}
+                                <img class="data-thumb" src="{{ object.image.url }}" alt="Фото отзыва">
+                            {% else %}
+                                <div class="data-empty-thumb">Нет фото</div>
+                            {% endif %}
+
+                            <div>
+                                {% if model_name == 'user' %}
+                                    <h3>{{ object.username }}</h3>
+                                    <p>{{ object.email|default:"Email не указан" }}</p>
+                                {% elif model_name == 'category' %}
+                                    <h3>{{ object.name }}</h3>
+                                    <p>{{ object.description|default:"Описание не указано" }}</p>
+                                {% elif model_name == 'menuitem' %}
+                                    <h3>{{ object.name }}</h3>
+                                    <p>{{ object.category.name }} · {{ object.price }} руб.</p>
+                                {% elif model_name == 'order' %}
+                                    <h3>Заказ №{{ object.id }}</h3>
+                                    <p>Статус: {{ object.get_status_display }} · Пользователь: {{ object.user|default:"не указан" }}</p>
+                                {% elif model_name == 'orderitem' %}
+                                    <h3>{{ object.menu_item.name }}</h3>
+                                    <p>Заказ №{{ object.order.id }} · Количество: {{ object.quantity }}</p>
+                                {% elif model_name == 'payment' %}
+                                    <h3>Оплата заказа №{{ object.order.id }}</h3>
+                                    <p>{{ object.amount }} руб. · {{ object.get_method_display }}</p>
+                                {% elif model_name == 'favorite' %}
+                                    <h3>{{ object.menu_item.name }}</h3>
+                                    <p>Пользователь: {{ object.user }} · Добавлено: {{ object.created_at }}</p>
+                                {% elif model_name == 'review' %}
+                                    <h3>Отзыв о {{ object.menu_item.name }}</h3>
+                                    <p>Оценка: {{ object.rating }} · Пользователь: {{ object.user|default:"не указан" }}</p>
+                                {% endif %}
+                            </div>
+
+                            <span class="row-actions">
+                                <a class="data-more" href="{% url detail_url_name object.pk %}">Подробнее</a>
+                                {% if update_url_name %}
+                                    <a class="row-action" href="{% url update_url_name object.pk %}">Изменить</a>
+                                {% endif %}
+                                {% if delete_url_name %}
+                                    <a class="row-action" href="{% url delete_url_name object.pk %}">Удалить</a>
+                                {% endif %}
+                            </span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="data-empty">Данных пока нет.</div>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

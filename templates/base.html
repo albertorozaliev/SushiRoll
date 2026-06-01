@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title_name %}SushiRoll{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+{% block header %}
+    {% include '_inc/_header.html' %}
+{% endblock %}
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+{% block footer %}
+    {% include '_inc/_footer.html' %}
+{% endblock %}
+    <script src="{% static 'js/app.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

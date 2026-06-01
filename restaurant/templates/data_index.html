@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <section class="data-page">
+        <div class="data-inner">
+            <h2 class="data-title">Данные проекта</h2>
+
+            <div class="data-grid">
+                <a class="data-card" href="{% url 'user_list' %}">
+                    <h3>Пользователи</h3>
+                    <p>Клиенты и админы сайта.</p>
+                </a>
+                <a class="data-card" href="{% url 'category_list' %}">
+                    <h3>Категории</h3>
+                    <p>Категории блюд.</p>
+                </a>
+                <a class="data-card" href="{% url 'menu_item_data_list' %}">
+                    <h3>Блюда меню</h3>
+                    <p>Товары с фотографиями.</p>
+                </a>
+                <a class="data-card" href="{% url 'order_list' %}">
+                    <h3>Заказы</h3>
+                    <p>Заказы клиентов.</p>
+                </a>
+                <a class="data-card" href="{% url 'order_item_list' %}">
+                    <h3>Состав заказов</h3>
+                    <p>Позиции внутри заказов.</p>
+                </a>
+                <a class="data-card" href="{% url 'payment_list' %}">
+                    <h3>Оплаты</h3>
+                    <p>Информация об оплатах.</p>
+                </a>
+                <a class="data-card" href="{% url 'favorite_list' %}">
+                    <h3>Избранное</h3>
+                    <p>Любимые блюда пользователей.</p>
+                </a>
+                <a class="data-card" href="{% url 'review_list' %}">
+                    <h3>Отзывы</h3>
+                    <p>Отзывы с фотографиями.</p>
+                </a>
+            </div>
+        </div>
+    </section>
+{% endblock %}

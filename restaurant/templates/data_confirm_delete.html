@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <section class="delete-page">
+        <form class="delete-card" method="post">
+            <h2>{{ page_title }}</h2>
+            {% csrf_token %}
+            <p>Вы действительно хотите удалить объект «{{ object }}»?</p>
+            <div class="delete-actions">
+                <button class="delete-button" type="submit">Удалить</button>
+                <a class="delete-link" href="{% url list_url_name %}">Отмена</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

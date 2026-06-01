@@ -1,8 +1,13 @@
-from django.urls import path
+from django.urls import include, path
 
 from . import views
 
 urlpatterns = [
+    path('api/', include('restaurant.api_urls')),
+    path('login/', views.SiteLoginView.as_view(), name='login'),
+    path('register/', views.RegisterView.as_view(), name='register'),
+    path('profile/', views.ProfileView.as_view(), name='profile'),
+    path('logout/', views.SiteLogoutView.as_view(), name='logout'),
     path('', views.InformationView.as_view(), name='information'),
     path('products/', views.MenuItemListView.as_view(), name='products'),
     path('products/<int:pk>/', views.MenuItemDetailView.as_view(), name='product_detail'),
@@ -10,6 +15,9 @@ urlpatterns = [
     path('data/', views.DataIndexView.as_view(), name='data_index'),
     path('data/users/', views.UserListView.as_view(), name='user_list'),
     path('data/users/<int:pk>/', views.UserDetailView.as_view(), name='user_detail'),
+    path('data/users/create/', views.UserCreateView.as_view(), name='user_create'),
+    path('data/users/<int:pk>/update/', views.UserUpdateView.as_view(), name='user_update'),
+    path('data/users/<int:pk>/delete/', views.UserDeleteView.as_view(), name='user_delete'),
     path('data/categories/', views.CategoryListView.as_view(), name='category_list'),
     path('data/categories/<int:pk>/', views.CategoryDetailView.as_view(), name='category_detail'),
     path('data/categories/create/', views.CategoryCreateView.as_view(), name='category_create'),

@@ -1,63 +1,135 @@
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, login, logout
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.views import LoginView
+from django.core.exceptions import PermissionDenied
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, TemplateView, UpdateView
 
+from .forms import RegisterForm, StaffUserCreateForm, StaffUserUpdateForm
 from .models import Category, Favorite, MenuItem, Order, OrderItem, Payment, Review
 
 
 User = get_user_model()
 
 
+class StaffRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.is_staff
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect('login')
+        raise PermissionDenied
+
+
+class SiteLoginView(LoginView):
+    template_name = 'auth_form.html'
+    redirect_authenticated_user = True
+
+    def get_success_url(self):
+        return reverse_lazy('profile')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Вход'
+        context['submit_label'] = 'Войти'
+        context['secondary_url_name'] = 'register'
+        context['secondary_label'] = 'Зарегистрироваться'
+        return context
+
+
+class RegisterView(CreateView):
+    form_class = RegisterForm
+    template_name = 'auth_form.html'
+    success_url = reverse_lazy('profile')
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('profile')
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        login(self.request, self.object)
+        return response
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['page_title'] = 'Регистрация'
+        context['submit_label'] = 'Зарегистрироваться'
+        context['secondary_url_name'] = 'login'
+        context['secondary_label'] = 'Уже есть аккаунт'
+        return context
+
+
+class ProfileView(TemplateView):
+    template_name = 'profile.html'
+
+
+class SiteLogoutView(LoginRequiredMixin, View):
+    login_url = reverse_lazy('login')
+
+    def post(self, request, *args, **kwargs):
+        logout(request)
+        return redirect('information')
+
+
 class InformationView(TemplateView):
-    template_name = 'restaurant/information.html'
+    template_name = 'information.html'
 
 
 class CartView(TemplateView):
-    template_name = 'restaurant/cart.html'
+    template_name = 'cart.html'
 
 
 class MenuItemListView(ListView):
     model = MenuItem
-    template_name = 'restaurant/products.html'
+    template_name = 'products.html'
     context_object_name = 'menu_items'
 
     def get_queryset(self):
-        category = self.request.GET.get('category', 'rolls')
-        category_names = {
-            'rolls': 'Роллы',
-            'sushi': 'Суши',
-        }
-        selected_category_name = category_names.get(category, category_names['rolls'])
-        self.selected_category = category
-        self.selected_category_name = selected_category_name
+        self.categories = Category.objects.filter(is_active=True)
+        category_slug = self.request.GET.get('category')
+        selected_category = None
 
-        return MenuItem.objects.filter(
-            is_available=True,
-            category__name__iexact=selected_category_name,
-        ).select_related('category')
+        if category_slug:
+            selected_category = self.categories.filter(slug=category_slug).first()
+
+        if selected_category is None:
+            selected_category = self.categories.first()
+
+        self.selected_category = selected_category
+
+        if selected_category is None:
+            return MenuItem.objects.none()
+
+        return selected_category.menu_items.filter(is_available=True).select_related('category')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['categories'] = self.categories
         context['selected_category'] = self.selected_category
-        context['selected_category_name'] = self.selected_category_name
+        context['selected_category_name'] = self.selected_category.name if self.selected_category else 'меню'
         return context
 
 
 class MenuItemDetailView(DetailView):
     model = MenuItem
-    template_name = 'restaurant/product_detail.html'
+    template_name = 'product_detail.html'
     context_object_name = 'menu_item'
 
     def get_queryset(self):
         return MenuItem.objects.filter(is_available=True).select_related('category')
 
 
-class DataIndexView(TemplateView):
-    template_name = 'restaurant/data_index.html'
+class DataIndexView(StaffRequiredMixin, TemplateView):
+    template_name = 'data_index.html'
 
 
 class DataListMixin:
-    template_name = 'restaurant/data_list.html'
+    template_name = 'data_list.html'
     context_object_name = 'objects'
     page_title = ''
     detail_url_name = ''
@@ -77,7 +149,7 @@ class DataListMixin:
 
 
 class DataDetailMixin:
-    template_name = 'restaurant/data_detail.html'
+    template_name = 'data_detail.html'
     context_object_name = 'object'
     page_title = ''
     list_url_name = ''
@@ -95,7 +167,7 @@ class DataDetailMixin:
 
 
 class DataFormMixin:
-    template_name = 'restaurant/data_form.html'
+    template_name = 'data_form.html'
     page_title = ''
     list_url_name = ''
 
@@ -110,7 +182,7 @@ class DataFormMixin:
 
 
 class DataDeleteMixin:
-    template_name = 'restaurant/data_confirm_delete.html'
+    template_name = 'data_confirm_delete.html'
     page_title = ''
     list_url_name = ''
 
@@ -124,25 +196,50 @@ class DataDeleteMixin:
         return context
 
 
-class UserListView(DataListMixin, ListView):
+class UserListView(StaffRequiredMixin, DataListMixin, ListView):
     model = User
     page_title = 'Пользователи'
     detail_url_name = 'user_detail'
+    create_url_name = 'user_create'
+    update_url_name = 'user_update'
+    delete_url_name = 'user_delete'
 
     def get_queryset(self):
         return User.objects.select_related('profile')
 
 
-class UserDetailView(DataDetailMixin, DetailView):
+class UserDetailView(StaffRequiredMixin, DataDetailMixin, DetailView):
     model = User
     page_title = 'Пользователь'
     list_url_name = 'user_list'
+    update_url_name = 'user_update'
+    delete_url_name = 'user_delete'
 
     def get_queryset(self):
         return User.objects.select_related('profile')
 
 
-class CategoryListView(DataListMixin, ListView):
+class UserCreateView(StaffRequiredMixin, DataFormMixin, CreateView):
+    model = User
+    form_class = StaffUserCreateForm
+    page_title = 'Добавить пользователя'
+    list_url_name = 'user_list'
+
+
+class UserUpdateView(StaffRequiredMixin, DataFormMixin, UpdateView):
+    model = User
+    form_class = StaffUserUpdateForm
+    page_title = 'Изменить пользователя'
+    list_url_name = 'user_list'
+
+
+class UserDeleteView(StaffRequiredMixin, DataDeleteMixin, DeleteView):
+    model = User
+    page_title = 'Удалить пользователя'
+    list_url_name = 'user_list'
+
+
+class CategoryListView(StaffRequiredMixin, DataListMixin, ListView):
     model = Category
     page_title = 'Категории'
     detail_url_name = 'category_detail'
@@ -151,7 +248,7 @@ class CategoryListView(DataListMixin, ListView):
     delete_url_name = 'category_delete'
 
 
-class CategoryDetailView(DataDetailMixin, DetailView):
+class CategoryDetailView(StaffRequiredMixin, DataDetailMixin, DetailView):
     model = Category
     page_title = 'Категория'
     list_url_name = 'category_list'
@@ -159,27 +256,27 @@ class CategoryDetailView(DataDetailMixin, DetailView):
     delete_url_name = 'category_delete'
 
 
-class CategoryCreateView(DataFormMixin, CreateView):
+class CategoryCreateView(StaffRequiredMixin, DataFormMixin, CreateView):
     model = Category
-    fields = ['name', 'slug', 'description', 'is_active']
+    fields = ['name', 'description', 'is_active']
     page_title = 'Добавить категорию'
     list_url_name = 'category_list'
 
 
-class CategoryUpdateView(DataFormMixin, UpdateView):
+class CategoryUpdateView(StaffRequiredMixin, DataFormMixin, UpdateView):
     model = Category
-    fields = ['name', 'slug', 'description', 'is_active']
+    fields = ['name', 'description', 'is_active']
     page_title = 'Изменить категорию'
     list_url_name = 'category_list'
 
 
-class CategoryDeleteView(DataDeleteMixin, DeleteView):
+class CategoryDeleteView(StaffRequiredMixin, DataDeleteMixin, DeleteView):
     model = Category
     page_title = 'Удалить категорию'
     list_url_name = 'category_list'
 
 
-class MenuItemDataListView(DataListMixin, ListView):
+class MenuItemDataListView(StaffRequiredMixin, DataListMixin, ListView):
     model = MenuItem
     page_title = 'Блюда меню'
     detail_url_name = 'menu_item_data_detail'
@@ -191,7 +288,7 @@ class MenuItemDataListView(DataListMixin, ListView):
         return MenuItem.objects.select_related('category')
 
 
-class MenuItemDataDetailView(DataDetailMixin, DetailView):
+class MenuItemDataDetailView(StaffRequiredMixin, DataDetailMixin, DetailView):
     model = MenuItem
     page_title = 'Блюдо меню'
     list_url_name = 'menu_item_data_list'
@@ -202,27 +299,27 @@ class MenuItemDataDetailView(DataDetailMixin, DetailView):
         return MenuItem.objects.select_related('category')
 
 
-class MenuItemCreateView(DataFormMixin, CreateView):
+class MenuItemCreateView(StaffRequiredMixin, DataFormMixin, CreateView):
     model = MenuItem
-    fields = ['category', 'name', 'slug', 'composition', 'image', 'price', 'weight_grams', 'is_available']
+    fields = ['category', 'name', 'composition', 'image', 'price', 'weight_grams', 'is_available']
     page_title = 'Добавить блюдо'
     list_url_name = 'menu_item_data_list'
 
 
-class MenuItemUpdateView(DataFormMixin, UpdateView):
+class MenuItemUpdateView(StaffRequiredMixin, DataFormMixin, UpdateView):
     model = MenuItem
-    fields = ['category', 'name', 'slug', 'composition', 'image', 'price', 'weight_grams', 'is_available']
+    fields = ['category', 'name', 'composition', 'image', 'price', 'weight_grams', 'is_available']
     page_title = 'Изменить блюдо'
     list_url_name = 'menu_item_data_list'
 
 
-class MenuItemDeleteView(DataDeleteMixin, DeleteView):
+class MenuItemDeleteView(StaffRequiredMixin, DataDeleteMixin, DeleteView):
     model = MenuItem
     page_title = 'Удалить блюдо'
     list_url_name = 'menu_item_data_list'
 
 
-class OrderListView(DataListMixin, ListView):
+class OrderListView(StaffRequiredMixin, DataListMixin, ListView):
     model = Order
     page_title = 'Заказы'
     detail_url_name = 'order_detail'
@@ -234,7 +331,7 @@ class OrderListView(DataListMixin, ListView):
         return Order.objects.select_related('user')
 
 
-class OrderDetailView(DataDetailMixin, DetailView):
+class OrderDetailView(StaffRequiredMixin, DataDetailMixin, DetailView):
     model = Order
     page_title = 'Заказ'
     list_url_name = 'order_list'
@@ -245,7 +342,7 @@ class OrderDetailView(DataDetailMixin, DetailView):
         return Order.objects.select_related('user')
 
 
-class OrderCreateView(DataFormMixin, CreateView):
+class OrderCreateView(StaffRequiredMixin, DataFormMixin, CreateView):
     model = Order
     fields = [
         'user',
@@ -261,7 +358,7 @@ class OrderCreateView(DataFormMixin, CreateView):
     list_url_name = 'order_list'
 
 
-class OrderUpdateView(DataFormMixin, UpdateView):
+class OrderUpdateView(StaffRequiredMixin, DataFormMixin, UpdateView):
     model = Order
     fields = [
         'user',
@@ -277,13 +374,13 @@ class OrderUpdateView(DataFormMixin, UpdateView):
     list_url_name = 'order_list'
 
 
-class OrderDeleteView(DataDeleteMixin, DeleteView):
+class OrderDeleteView(StaffRequiredMixin, DataDeleteMixin, DeleteView):
     model = Order
     page_title = 'Удалить заказ'
     list_url_name = 'order_list'
 
 
-class OrderItemListView(DataListMixin, ListView):
+class OrderItemListView(StaffRequiredMixin, DataListMixin, ListView):
     model = OrderItem
     page_title = 'Состав заказов'
     detail_url_name = 'order_item_detail'
@@ -295,7 +392,7 @@ class OrderItemListView(DataListMixin, ListView):
         return OrderItem.objects.select_related('order', 'menu_item')
 
 
-class OrderItemDetailView(DataDetailMixin, DetailView):
+class OrderItemDetailView(StaffRequiredMixin, DataDetailMixin, DetailView):
     model = OrderItem
     page_title = 'Позиция заказа'
     list_url_name = 'order_item_list'
@@ -306,27 +403,27 @@ class OrderItemDetailView(DataDetailMixin, DetailView):
         return OrderItem.objects.select_related('order', 'menu_item')
 
 
-class OrderItemCreateView(DataFormMixin, CreateView):
+class OrderItemCreateView(StaffRequiredMixin, DataFormMixin, CreateView):
     model = OrderItem
     fields = ['order', 'menu_item', 'quantity', 'unit_price']
     page_title = 'Добавить позицию заказа'
     list_url_name = 'order_item_list'
 
 
-class OrderItemUpdateView(DataFormMixin, UpdateView):
+class OrderItemUpdateView(StaffRequiredMixin, DataFormMixin, UpdateView):
     model = OrderItem
     fields = ['order', 'menu_item', 'quantity', 'unit_price']
     page_title = 'Изменить позицию заказа'
     list_url_name = 'order_item_list'
 
 
-class OrderItemDeleteView(DataDeleteMixin, DeleteView):
+class OrderItemDeleteView(StaffRequiredMixin, DataDeleteMixin, DeleteView):
     model = OrderItem
     page_title = 'Удалить позицию заказа'
     list_url_name = 'order_item_list'
 
 
-class PaymentListView(DataListMixin, ListView):
+class PaymentListView(StaffRequiredMixin, DataListMixin, ListView):
     model = Payment
     page_title = 'Оплаты'
     detail_url_name = 'payment_detail'
@@ -338,7 +435,7 @@ class PaymentListView(DataListMixin, ListView):
         return Payment.objects.select_related('order')
 
 
-class PaymentDetailView(DataDetailMixin, DetailView):
+class PaymentDetailView(StaffRequiredMixin, DataDetailMixin, DetailView):
     model = Payment
     page_title = 'Оплата'
     list_url_name = 'payment_list'
@@ -349,27 +446,27 @@ class PaymentDetailView(DataDetailMixin, DetailView):
         return Payment.objects.select_related('order')
 
 
-class PaymentCreateView(DataFormMixin, CreateView):
+class PaymentCreateView(StaffRequiredMixin, DataFormMixin, CreateView):
     model = Payment
     fields = ['order', 'method', 'amount', 'is_paid', 'paid_at']
     page_title = 'Добавить оплату'
     list_url_name = 'payment_list'
 
 
-class PaymentUpdateView(DataFormMixin, UpdateView):
+class PaymentUpdateView(StaffRequiredMixin, DataFormMixin, UpdateView):
     model = Payment
     fields = ['order', 'method', 'amount', 'is_paid', 'paid_at']
     page_title = 'Изменить оплату'
     list_url_name = 'payment_list'
 
 
-class PaymentDeleteView(DataDeleteMixin, DeleteView):
+class PaymentDeleteView(StaffRequiredMixin, DataDeleteMixin, DeleteView):
     model = Payment
     page_title = 'Удалить оплату'
     list_url_name = 'payment_list'
 
 
-class FavoriteListView(DataListMixin, ListView):
+class FavoriteListView(StaffRequiredMixin, DataListMixin, ListView):
     model = Favorite
     page_title = 'Избранное'
     detail_url_name = 'favorite_detail'
@@ -381,7 +478,7 @@ class FavoriteListView(DataListMixin, ListView):
         return Favorite.objects.select_related('user', 'menu_item')
 
 
-class FavoriteDetailView(DataDetailMixin, DetailView):
+class FavoriteDetailView(StaffRequiredMixin, DataDetailMixin, DetailView):
     model = Favorite
     page_title = 'Избранное'
     list_url_name = 'favorite_list'
@@ -392,27 +489,27 @@ class FavoriteDetailView(DataDetailMixin, DetailView):
         return Favorite.objects.select_related('user', 'menu_item')
 
 
-class FavoriteCreateView(DataFormMixin, CreateView):
+class FavoriteCreateView(StaffRequiredMixin, DataFormMixin, CreateView):
     model = Favorite
     fields = ['user', 'menu_item']
     page_title = 'Добавить в избранное'
     list_url_name = 'favorite_list'
 
 
-class FavoriteUpdateView(DataFormMixin, UpdateView):
+class FavoriteUpdateView(StaffRequiredMixin, DataFormMixin, UpdateView):
     model = Favorite
     fields = ['user', 'menu_item']
     page_title = 'Изменить избранное'
     list_url_name = 'favorite_list'
 
 
-class FavoriteDeleteView(DataDeleteMixin, DeleteView):
+class FavoriteDeleteView(StaffRequiredMixin, DataDeleteMixin, DeleteView):
     model = Favorite
     page_title = 'Удалить избранное'
     list_url_name = 'favorite_list'
 
 
-class ReviewListView(DataListMixin, ListView):
+class ReviewListView(StaffRequiredMixin, DataListMixin, ListView):
     model = Review
     page_title = 'Отзывы'
     detail_url_name = 'review_detail'
@@ -424,7 +521,7 @@ class ReviewListView(DataListMixin, ListView):
         return Review.objects.select_related('user', 'menu_item')
 
 
-class ReviewDetailView(DataDetailMixin, DetailView):
+class ReviewDetailView(StaffRequiredMixin, DataDetailMixin, DetailView):
     model = Review
     page_title = 'Отзыв'
     list_url_name = 'review_list'
@@ -435,21 +532,21 @@ class ReviewDetailView(DataDetailMixin, DetailView):
         return Review.objects.select_related('user', 'menu_item')
 
 
-class ReviewCreateView(DataFormMixin, CreateView):
+class ReviewCreateView(StaffRequiredMixin, DataFormMixin, CreateView):
     model = Review
     fields = ['user', 'menu_item', 'rating', 'text', 'image', 'is_published']
     page_title = 'Добавить отзыв'
     list_url_name = 'review_list'
 
 
-class ReviewUpdateView(DataFormMixin, UpdateView):
+class ReviewUpdateView(StaffRequiredMixin, DataFormMixin, UpdateView):
     model = Review
     fields = ['user', 'menu_item', 'rating', 'text', 'image', 'is_published']
     page_title = 'Изменить отзыв'
     list_url_name = 'review_list'
 
 
-class ReviewDeleteView(DataDeleteMixin, DeleteView):
+class ReviewDeleteView(StaffRequiredMixin, DataDeleteMixin, DeleteView):
     model = Review
     page_title = 'Удалить отзыв'
     list_url_name = 'review_list'

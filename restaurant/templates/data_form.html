@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <section class="form-page">
+        <form class="form-card" method="post" enctype="multipart/form-data">
+            <h2>{{ page_title }}</h2>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="form-actions">
+                <button class="form-button" type="submit">Сохранить</button>
+                <a class="form-link" href="{% url list_url_name %}">Отмена</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

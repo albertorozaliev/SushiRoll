@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title_name %}
+    Корзина
+{% endblock %}
+
+{% block content %}
+    <section class="cart-page">
+        <div class="cart-inner">
+            <h2 class="cart-title">Корзина</h2>
+
+            <div id="cart-list" class="cart-list"></div>
+            <div id="cart-total" class="cart-total"></div>
+
+            <div class="cart-actions">
+                <a class="cart-link" href="{% url 'products' %}">Вернуться в меню</a>
+                <button class="cart-clear" type="button" id="clear-cart">Очистить</button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        const cartList = document.querySelector('#cart-list');
+        const cartTotal = document.querySelector('#cart-total');
+        const clearCartButton = document.querySelector('#clear-cart');
+
+        function renderCart() {
+            const cart = JSON.parse(localStorage.getItem('sushiroll_cart') || '[]');
+
+            if (cart.length === 0) {
+                cartList.innerHTML = '<div class="cart-empty">Ваша корзина пока пуста.<br>Добавьте товары из меню, чтобы оформить заказ.</div>';
+                cartTotal.textContent = '';
+                return;
+            }
+
+            let total = 0;
+
+            cartList.innerHTML = cart.map(function (item) {
+                const price = Number(item.price) || 0;
+                const quantity = Number(item.quantity) || 1;
+                total += price * quantity;
+
+                const image = item.image
+                    ? '<img src="' + item.image + '" alt="' + item.name + '">'
+                    : '<img alt="Нет фото">';
+
+                return '<div class="cart-item">'
+                    + image
+                    + '<div>'
+                    + '<h3>' + item.name + '</h3>'
+                    + '<p>Количество: ' + quantity + '</p>'
+                    + '<p>Вес: ' + item.weight + '</p>'
+                    + '<p>Состав: ' + item.composition + '</p>'
+                    + '</div>'
+                    + '<div class="cart-price">' + (price * quantity).toFixed(2) + ' руб.</div>'
+                    + '</div>';
+            }).join('');
+
+            cartTotal.textContent = 'Итого: ' + total.toFixed(2) + ' руб.';
+        }
+
+        clearCartButton.addEventListener('click', function () {
+            localStorage.removeItem('sushiroll_cart');
+            renderCart();
+        });
+
+        renderCart();
+    </script>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <section class="menu-page">
+        <div class="menu-layout">
+            <aside class="menu-categories">
+                {% for category in categories %}
+                    <a class="{% if selected_category and selected_category.pk == category.pk %}active{% endif %}" href="{% url 'products' %}?category={{ category.slug }}">{{ category.name }}</a>
+                {% endfor %}
+            </aside>
+
+            <div>
+                <div class="menu-top">
+                    <input class="menu-search" type="search" placeholder="Поиск">
+                </div>
+
+                {% if menu_items %}
+                    <div class="menu-grid">
+                        {% for item in menu_items %}
+                            <a class="menu-card" href="{% url 'product_detail' item.id %}">
+                                {% if item.image %}
+                                    <img class="menu-card-image" src="{{ item.image.url }}" alt="{{ item.name }}">
+                                {% else %}
+                                    <div class="menu-card-placeholder">Нет фото</div>
+                                {% endif %}
+
+                                <h3>{{ item.name }}</h3>
+                                <p class="menu-card-price">{{ item.price }} руб.</p>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="menu-empty">В категории «{{ selected_category_name }}» пока нет товаров.</p>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+{% endblock %}

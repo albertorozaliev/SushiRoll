@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title_name %}
+    Профиль
+{% endblock %}
+
+{% block content %}
+    <section class="data-page">
+        <div class="data-detail">
+            {% if request.user.is_authenticated %}
+                <h2>Профиль</h2>
+                <ul class="detail-list">
+                    <li><strong>Логин:</strong> {{ request.user.username }}</li>
+                    <li><strong>Email:</strong> {{ request.user.email|default:"не указан" }}</li>
+                    <li><strong>Имя:</strong> {{ request.user.first_name|default:"не указано" }}</li>
+                    <li><strong>Фамилия:</strong> {{ request.user.last_name|default:"не указана" }}</li>
+                    <li><strong>Роль:</strong> {% if request.user.is_staff %}администратор{% else %}пользователь{% endif %}</li>
+                </ul>
+
+                <div class="detail-actions">
+                    {% if request.user.is_staff %}
+                        <a class="detail-action" href="{% url 'data_index' %}">Перейти к данным</a>
+                    {% endif %}
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button class="detail-action secondary" type="submit">Выйти</button>
+                    </form>
+                </div>
+            {% else %}
+                <h2>Профиль</h2>
+                <p class="profile-text">Войдите в аккаунт или зарегистрируйтесь, чтобы увидеть данные профиля.</p>
+                <div class="detail-actions">
+                    <a class="detail-action" href="{% url 'login' %}">Войти</a>
+                    <a class="detail-action secondary" href="{% url 'register' %}">Регистрация</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

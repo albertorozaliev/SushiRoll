@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title_name %}
+    {{ page_title }}
+{% endblock %}
+
+{% block content %}
+    <section class="form-page">
+        <form class="form-card" method="post">
+            <h2>{{ page_title }}</h2>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="form-actions">
+                <button class="form-button" type="submit">{{ submit_label }}</button>
+                <a class="form-link" href="{% url secondary_url_name %}">{{ secondary_label }}</a>
+            </div>
+        </form>
+    </section>
+{% endblock %}

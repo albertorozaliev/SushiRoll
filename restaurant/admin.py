@@ -39,7 +39,7 @@ class UserAdmin(DefaultUserAdmin):
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug', 'is_active')
-    prepopulated_fields = {'slug': ('name',)}
+    readonly_fields = ('slug',)
     search_fields = ('name',)
 
 
@@ -47,9 +47,9 @@ class CategoryAdmin(admin.ModelAdmin):
 class MenuItemAdmin(admin.ModelAdmin):
     list_display = ('name', 'category', 'price', 'weight_grams', 'is_available')
     list_filter = ('category', 'is_available')
-    prepopulated_fields = {'slug': ('name',)}
+    readonly_fields = ('slug',)
     search_fields = ('name', 'composition')
-    fields = ('category', 'name', 'slug', 'composition', 'image', 'price', 'weight_grams', 'is_available')
+    fields = ('category', 'name', 'composition', 'image', 'price', 'weight_grams', 'is_available', 'slug')
 
 
 @admin.register(UserProfile)
